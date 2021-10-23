@@ -31,9 +31,9 @@ fn main() {
 }
 
 fn edit_crontab( charge_level_int: i32) {
-    let _contents = fs::read_to_string("/etc/crontab");
+    let _contents = fs::read_to_string("/var/spool/cron/crontabs/root");
     if _contents.is_err() {
-        eprintln!("Could not read /etc/crontab, try running with elevated privileges or check to see if you have the file /etc/crontab");
+        eprintln!("Could not read /var/spool/cron/crontabs/root, try running with elevated privileges or check to see if you have the file /var/spool/cron/crontabs/root");
         process::exit(1);
     }
     let contents = _contents.unwrap();
@@ -43,7 +43,6 @@ fn edit_crontab( charge_level_int: i32) {
     while let Some(line) = lines.next() {
         if line.contains("/sys/class/power_supply/BAT0/charge_control_end_threshold") {
             found_line = true;
-            // update the line with the new charge level @reboot echo {charge_level_int} > /sys/class/power_supply/BAT0/charge_control_end_threshold
             new_crontab.push_str(&format!("@reboot echo {charge_level_int} > /sys/class/power_supply/BAT0/charge_control_end_threshold\n", charge_level_int = charge_level_int));
         } else {
             new_crontab.push_str(line);
@@ -55,9 +54,9 @@ fn edit_crontab( charge_level_int: i32) {
         new_crontab.push_str(&charge_level_int.to_string());
         new_crontab.push_str(" > /sys/class/power_supply/BAT0/charge_control_end_threshold\n");
     }
-    let _contents = fs::write("/etc/crontab", new_crontab);
+    let _contents = fs::write("/var/spool/cron/crontabs/root", new_crontab);
     if _contents.is_err() {
-        eprintln!("Could not write to /etc/crontab, try running with elevated privileges or check to see if you have the file /etc/crontab");
+        eprintln!("Could not write to /var/spool/cron/crontabs/root, try running with elevated privileges or check to see if you have the file /var/spool/cron/crontabs/root");
         process::exit(1);
     }
 
