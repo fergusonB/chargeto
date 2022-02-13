@@ -87,3 +87,4 @@ fn check_if_service_enabled()->bool{
 
 //#todo allow user to not implement service or delete service file
 //#todo check for non bat0 battery
+//#todo documentation, locations of modified files, etc
