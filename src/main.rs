@@ -1,22 +1,21 @@
 use std::env;
 use std::fs;
+use std::io::Write;
 use std::process;
 fn main() {
+    // Get and parse args
     let args: Vec<String> = env::args().collect();
-
-
     if args.len() != 2 {
         eprintln!("Usage: chargeto 80");
         process::exit(1);
     }
-
     let charge_level = &args[1];
-
     let charge_level_int = charge_level.parse::<i32>().unwrap_or(0);
     if charge_level_int < 20 || charge_level_int > 100 {
         eprintln!("Charge level must be an integer between 20 and 100");
         process::exit(1);
     } else {
+        //write to file
         let _contents = fs::write(
             "/sys/class/power_supply/BAT0/charge_control_end_threshold",
             charge_level,
@@ -25,40 +24,67 @@ fn main() {
             eprintln!("Could not write to charge_control_end_threshold, try running with elevated privileges or check to see if you have the file /sys/class/power_supply/BAT0/charge_control_end_threshold");
             process::exit(1);
         }
-        edit_crontab(charge_level_int);
+        
+        create_systemd_service_file(&charge_level_int);
+
+        if check_if_service_enabled(){
+            println!("Service is already enabled");
+        }
+        else{
+            enable_chargeto_service();
+            println!("Service has been enabled");
+        }
+
         println!("Charging to {} percent", charge_level);
     }
 }
 
-fn edit_crontab( charge_level_int: i32) {
-    let _contents = fs::read_to_string("/var/spool/cron/crontabs/root");
-    if _contents.is_err() {
-        eprintln!("Could not read /var/spool/cron/crontabs/root, try running with elevated privileges or check to see if you have the file /var/spool/cron/crontabs/root");
-        process::exit(1);
-    }
-    let contents = _contents.unwrap();
-    let mut lines = contents.lines();
-    let mut new_crontab = String::new();
-    let mut found_line = false;
-    while let Some(line) = lines.next() {
-        if line.contains("/sys/class/power_supply/BAT0/charge_control_end_threshold") {
-            found_line = true;
-            new_crontab.push_str(&format!("@reboot echo {charge_level_int} > /sys/class/power_supply/BAT0/charge_control_end_threshold\n", charge_level_int = charge_level_int));
-        } else {
-            new_crontab.push_str(line);
-            new_crontab.push_str("\n");
-        }
-    }
-    if !found_line {
-        new_crontab.push_str("@reboot echo ");
-        new_crontab.push_str(&charge_level_int.to_string());
-        new_crontab.push_str(" > /sys/class/power_supply/BAT0/charge_control_end_threshold\n");
-    }
-    let _contents = fs::write("/var/spool/cron/crontabs/root", new_crontab);
-    if _contents.is_err() {
-        eprintln!("Could not write to /var/spool/cron/crontabs/root, try running with elevated privileges or check to see if you have the file /var/spool/cron/crontabs/root");
-        process::exit(1);
-    }
+// create systemd service file
+fn create_systemd_service_file(charge_level: &i32) {
+    let mut file = fs::File::create("/etc/systemd/system/chargeto.service").unwrap();
+    let contents = format!(
+        "[Unit]
+        Description=Set battery charge threshold
+        After=multi-user.target
+        StartLimitBurst =0
 
+        [Service]
+        Type=oneshot
+        Restart=on-failure
+        ExecStart=/bin/bash -c 'echo {} > /sys/class/power_supply/BAT0/charge_control_end_threshold'
 
+        [Install]
+        WantedBy=multi-user.target",charge_level);
+
+    file.write_all(contents.as_bytes()).unwrap();
 }
+
+fn enable_chargeto_service(){
+    //run command 'sudo systemctl enable chargeto.service'
+    let _contents = process::Command::new("sudo")
+        .arg("systemctl")
+        .arg("enable")
+        .arg("chargeto.service")
+        .output()
+        .expect("failed to execute process");
+}
+
+fn check_if_service_enabled()->bool{
+    //run command 'systemctl is-enabled chargeto.service'
+    let _contents = process::Command::new("systemctl")
+        .arg("is-enabled")
+        .arg("chargeto.service")
+        .output()
+        .expect("failed to execute process");
+        //return bool
+        if _contents.status.success() {
+            return true;
+        }
+        else{
+            return false;
+        }
+}
+
+//#todo allow user to not implement service or delete service file
+//#todo check for non bat0 battery
+//#todo documentation, locations of modified files, etc
