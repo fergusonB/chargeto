@@ -24,7 +24,17 @@ fn main() {
             eprintln!("Could not write to charge_control_end_threshold, try running with elevated privileges or check to see if you have the file /sys/class/power_supply/BAT0/charge_control_end_threshold");
             process::exit(1);
         }
+        
         create_systemd_service_file(&charge_level_int);
+
+        if check_if_service_enabled(){
+            println!("Service is already enabled");
+        }
+        else{
+            enable_chargeto_service();
+            println!("Service has been enabled");
+        }
+
         println!("Charging to {} percent", charge_level);
     }
 }
@@ -49,6 +59,31 @@ fn create_systemd_service_file(charge_level: &i32) {
     file.write_all(contents.as_bytes()).unwrap();
 }
 
-//#todo - run commands - sudo systemctl enable chargeto.service -- print to stdout
+fn enable_chargeto_service(){
+    //run command 'sudo systemctl enable chargeto.service'
+    let _contents = process::Command::new("sudo")
+        .arg("systemctl")
+        .arg("enable")
+        .arg("chargeto.service")
+        .output()
+        .expect("failed to execute process");
+}
+
+fn check_if_service_enabled()->bool{
+    //run command 'systemctl is-enabled chargeto.service'
+    let _contents = process::Command::new("systemctl")
+        .arg("is-enabled")
+        .arg("chargeto.service")
+        .output()
+        .expect("failed to execute process");
+        //return bool
+        if _contents.status.success() {
+            return true;
+        }
+        else{
+            return false;
+        }
+}
+
 //#todo allow user to not implement service or delete service file
 //#todo check for non bat0 battery
