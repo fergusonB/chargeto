@@ -39,7 +39,6 @@ fn main() {
     }
 }
 
-// create systemd service file
 fn create_systemd_service_file(charge_level: &i32) {
     let mut file = fs::File::create("/etc/systemd/system/chargeto.service").unwrap();
     let contents = format!(
@@ -71,18 +70,13 @@ fn enable_chargeto_service(){
 
 fn check_if_service_enabled()->bool{
     //run command 'systemctl is-enabled chargeto.service'
-    let _contents = process::Command::new("systemctl")
+    let contents = process::Command::new("systemctl")
         .arg("is-enabled")
         .arg("chargeto.service")
         .output()
         .expect("failed to execute process");
-        //return bool
-        if _contents.status.success() {
-            return true;
-        }
-        else{
-            return false;
-        }
+       contents.status.success()
+    
 }
 
 //#todo allow user to not implement service or delete service file
