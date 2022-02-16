@@ -1,7 +1,8 @@
 use std::fs;
 use std::io::Write;
 
-pub fn create_systemd_service_file(charge_level: &i32) {
+
+pub fn create_systemd_service_file(charge_level: i32) {
     let mut file = fs::File::create("/etc/systemd/system/chargeto.service").unwrap();
     let contents = format!(
         "[Unit]
@@ -18,4 +19,11 @@ pub fn create_systemd_service_file(charge_level: &i32) {
         WantedBy=multi-user.target",charge_level);
 
     file.write_all(contents.as_bytes()).unwrap();
+}
+
+pub fn uninstall_systemd_service_file(){
+    if fs::metadata("/etc/systemd/system/chargeto.service").is_ok() {
+        fs::remove_file("/etc/systemd/system/chargeto.service").unwrap();
+        println!("Uninstalling chargeto systemd service");
+    }
 }

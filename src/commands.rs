@@ -20,3 +20,16 @@ pub fn check_if_service_enabled()->bool{
        contents.status.success()
     
 }
+
+pub fn disable_chargeto_service(){
+    //run command 'sudo systemctl disable chargeto.service'
+    if check_if_service_enabled(){
+        let _contents = process::Command::new("sudo")
+        .arg("systemctl")
+        .arg("disable")
+        .arg("chargeto.service")
+        .output()
+        .expect("failed to execute process");
+    }
+
+}
