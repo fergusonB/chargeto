@@ -1,8 +1,8 @@
 use std::env;
-use std::process;
 
 mod commands;
 mod systemd;
+mod info;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -35,7 +35,7 @@ fn main() {
                     "Invalid charge level: {}. Must be between 20 and 100",
                     charge_level
                 );
-                process::exit(1);
+                info::print_info();
             } else {
                 commands::write_charge_control_end_threshold(charge_level);
                 println!("Charge level set to {}%", charge_level);
@@ -48,7 +48,7 @@ fn main() {
 
 fn args_options_execution(charge_level: i32, skip_systemd: bool, uninstall_systemd: bool) {
     if charge_level == 0 {
-        println!("No charge level specified. Using default of 100");
+        info::print_info();
         commands::write_charge_control_end_threshold(100);
     }
 
