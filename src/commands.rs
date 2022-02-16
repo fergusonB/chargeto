@@ -1,4 +1,5 @@
 use std::process;
+use std::fs;
 
 pub fn enable_chargeto_service(){
     //run command 'sudo systemctl enable chargeto.service'
@@ -33,3 +34,16 @@ pub fn disable_chargeto_service(){
     }
 
 }
+
+
+pub fn write_charge_control_end_threshold(charge_level: i32) {
+    let _contents = fs::write(
+        "/sys/class/power_supply/BAT0/charge_control_end_threshold",
+        charge_level.to_string()
+    );
+    if _contents.is_err() {
+        eprintln!("Could not write to charge_control_end_threshold, try running with elevated privileges or check to see if you have the file /sys/class/power_supply/BAT0/charge_control_end_threshold");
+        process::exit(1);
+    }
+}
+
