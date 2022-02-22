@@ -24,6 +24,10 @@ pub fn create_systemd_service_file(charge_level: i32) {
 pub fn uninstall_systemd_service_file(){
     if fs::metadata("/etc/systemd/system/chargeto.service").is_ok() {
         fs::remove_file("/etc/systemd/system/chargeto.service").unwrap();
-        println!("Uninstalling chargeto systemd service");
+        println!("chargeto systemd service has been uninstalled.");
     }
+    else if fs::metadata("/etc/systemd/system/chargeto.service").is_err() {
+        println!("chargeto systemd service has already been uninstalled.");
+    }
+
 }
