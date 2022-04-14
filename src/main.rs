@@ -66,7 +66,9 @@ fn args_options_execution(charge_level: i32, skip_systemd: bool, uninstall_syste
         }
     }
     if uninstall_systemd {
-        commands::disable_chargeto_service();
-        systemd::uninstall_systemd_service_file();
+        if commands::check_if_service_enabled() {
+            commands::disable_chargeto_service();
+            systemd::uninstall_systemd_service_file();
+        }
     }
 }
