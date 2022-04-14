@@ -1,4 +1,5 @@
 use std::env;
+use std::process;
 
 mod commands;
 mod info;
@@ -18,6 +19,13 @@ fn main() {
 
     // parse arguments
     for arg in args {
+        // show current settings
+        if arg == "-s" || arg == "--show" {
+           println!("Current settings:");
+              println!("\tCharge control end threshold: {}%", charge_level);
+                println!("\tSystemd service enabled: {}", commands::check_if_service_enabled());
+            process::exit(0);
+        }
         //systemd block
         if arg == "-no-systemd" {
             if skip_systemd == false {
