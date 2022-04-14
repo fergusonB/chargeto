@@ -16,6 +16,7 @@ fn main() {
     let mut skip_systemd = false;
     let mut uninstall_systemd = false;
     let mut charge_level = commands::read_current_charge_limit();
+    let charge_level_initial = commands::read_current_charge_limit();
 
     // parse arguments
     for arg in args {
@@ -28,10 +29,7 @@ fn main() {
         }
         //systemd block
         if arg == "-no-systemd" {
-            if skip_systemd == false {
-                skip_systemd = true;
-                println!("Skipping installation of chargeto systemd service");
-            }
+            skip_systemd = true;
         }
         if arg == "-uninstall-systemd" {
             if uninstall_systemd == false {
@@ -54,15 +52,24 @@ fn main() {
         }
     }
 
-    args_options_execution(charge_level, skip_systemd, uninstall_systemd)
+    args_options_execution(charge_level, skip_systemd, uninstall_systemd, charge_level_initial);
 }
 
-fn args_options_execution(charge_level: i32, skip_systemd: bool, uninstall_systemd: bool) {
+fn args_options_execution(charge_level: i32, skip_systemd: bool, uninstall_systemd: bool, charge_level_initial: i32) {
     if !skip_systemd {
         systemd::create_systemd_service_file(charge_level);
 
         if !commands::check_if_service_enabled() {
             commands::enable_chargeto_service();
+        }
+    }
+    else if skip_systemd{
+        if charge_level == charge_level_initial {
+            println!("Charge control end threshold is already set to {}%, and there is no reason to skip systemd service creation.", charge_level);
+            info::print_info();
+        }
+        else {
+            println!("Skipping systemd service creation");
         }
     }
     if uninstall_systemd {
